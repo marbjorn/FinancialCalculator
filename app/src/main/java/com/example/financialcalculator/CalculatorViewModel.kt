@@ -32,17 +32,23 @@ class CalculatorViewModel : ViewModel() {
             Operation.SUBTRACT -> number1 - number2
         }
 
-        return result.toString()
+        return result.toPlainString()
     }
 
     fun validateNumRange(num : BigDecimal) : Boolean {
-        return (abs(num.toDouble()) < 1000000000000.000000)
+        return (
+                num.abs() <= BigDecimal(1000000000000.000000))
     }
 }
 
 fun String.toNumber() : BigDecimal? {
     return this
         .replace(',', '.')
-        .filterNot{ it.isWhitespace() }
+        .filterNot { it == 'e' || it == 'E' || it.isWhitespace() }
         .toBigDecimalOrNull()
+}
+
+fun String.toFormat() : String {
+    return this
+        .filterNot { it.isWhitespace() }
 }
