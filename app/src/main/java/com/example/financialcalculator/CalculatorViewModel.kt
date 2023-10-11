@@ -49,8 +49,9 @@ fun String.toNumber() : BigDecimal? {
 }
 
 fun String.toFormat() : String {
-    if (this.length >= 2 && this[0] == '0' && this[1] != '.') return this[0] + "." + this.substring(1, this.lastIndex)
-    else if (this.isNotEmpty() && this[0] == '.') return "0$this"
-    return this
+    val str : String = if (this.length >= 2 && this[0] == '0' && this[1] != '.') this[0] + "." + this.substring(1, this.lastIndex)
+    else if (this.isNotEmpty() && this[0] == '.') "0$this"
+    else this
+    return str
         .filterNot { it.isWhitespace() }
 }
