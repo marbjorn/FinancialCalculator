@@ -3,7 +3,9 @@ package com.example.financialcalculator
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import java.lang.Exception
 import java.math.BigDecimal
+import java.math.MathContext
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
@@ -29,7 +31,10 @@ class CalculatorViewModel : ViewModel() {
         Log.d("NUM1", number1.toString())
         Log.d("NUM2", number2.toString())
 
-        if (number1 == null || number2 == null || !validateNumRange(number1) || !validateNumRange(number2)) {
+        if (number1 == null
+            || number2 == null
+            || !validateNumRange(number1)
+            || !validateNumRange(number2)) {
             return null;
         }
         val result = when(operation) {
@@ -37,8 +42,12 @@ class CalculatorViewModel : ViewModel() {
             Operation.SUBTRACT -> number1 - number2
             Operation.MULTIPLY -> number1 * number2
             Operation.DIVIDE -> {
-                if (number2 != BigDecimal.ZERO) number1 / number2
-                else return null
+                try {
+                    number1.div(number2)
+                }
+                catch (_ : Exception) {
+                    return null
+                }
             }
         }
 
@@ -47,20 +56,28 @@ class CalculatorViewModel : ViewModel() {
 
     fun validateNumRange(num : BigDecimal) : Boolean {
         return (
-                num.abs() <= BigDecimal(1000000000000.000000))
+                num.abs() <= BigDecimal(1000000000000))
+    }
+
+    fun validateNumRange(numStr : String) : Boolean {
+        val num = numStr.toNumber()
+        return (num != null &&
+                num.abs() <= BigDecimal(1000000000000))
     }
 }
 
 fun String.toNumber() : BigDecimal? {
     return this
-        .replace(',', '.')
-        .filterNot { it == 'e' || it == 'E' || it.isWhitespace() }
+        .filterNot { it.isWhitespace() || it == ',' }
         .toBigDecimalOrNull()
+        .let {
+            it?.setScale(6, RoundingMode.HALF_UP)
+        }
+        .also { Log.d("parsed", this) }
 }
 
-fun BigDecimal.toFormatPlainString(places : Int = 6): String? {
-    val df = DecimalFormat("%.${places}f")
-    this.setScale(places, RoundingMode.HALF_UP)
+fun BigDecimal.toFormatPlainString(): String? {
+    val df = DecimalFormat("#,###.######")
     val customSymbol = DecimalFormatSymbols()
     customSymbol.groupingSeparator = ' '
     df.decimalFormatSymbols = customSymbol
@@ -68,9 +85,11 @@ fun BigDecimal.toFormatPlainString(places : Int = 6): String? {
 }
 fun String.toFormat() : String {
     val str : String = if (this.length >= 2 && this[0] == '0' && this[1] != '.') this[0] + "." + this.substring(1, this.lastIndex)
-    else if (this.isNotEmpty() && this[0] == '.') "0$this"
     else this
-
     return str
-        .filterNot { it.isWhitespace() }
+}
+
+fun String.isEqualZeroAsNumber() : Boolean = (this.toNumber() != null && this.toNumber()!!.compareTo(
+    BigDecimal.ZERO) == 0).also {
+    Log.d("isEqualZero", this)
 }

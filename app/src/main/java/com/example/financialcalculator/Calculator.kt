@@ -49,27 +49,46 @@ fun Calculator(
         Spacer(modifier = Modifier.padding(10.dp))
         NumericField(viewModel, num2, label = {Text("Второе число")})
         Spacer(modifier = Modifier.padding(10.dp))
-        NumericField(viewModel, result, isBlocked = true, label = {Text("Результат")})
+        NumericField(viewModel, result, isReadOnlyField = true, label = {Text("Результат")})
 
         Spacer(modifier = Modifier.padding(20.dp))
-        Row(modifier = Modifier.fillMaxWidth(), ) {
-            OperationButton(viewModel = viewModel,
-                operation = Operation.ADD,
-                operationStr = "+",
-                num1 = num1,
-                num2 = num2,
-                result = result,
-                modifier = Modifier.fillMaxWidth().weight(0.5f))
+        Column(modifier = Modifier.fillMaxWidth(), ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OperationButton(viewModel = viewModel,
+                    operation = Operation.ADD,
+                    operationStr = "+",
+                    num1 = num1,
+                    num2 = num2,
+                    result = result,
+                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+                Spacer(modifier = Modifier.padding(10.dp))
+                OperationButton(viewModel = viewModel,
+                    operation = Operation.SUBTRACT,
+                    operationStr = "-",
+                    num1 = num1,
+                    num2 = num2,
+                    result = result,
+                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+            }
             Spacer(modifier = Modifier.padding(10.dp))
-            OperationButton(viewModel = viewModel,
-                operation = Operation.SUBTRACT,
-                operationStr = "-",
-                num1 = num1,
-                num2 = num2,
-                result = result,
-                modifier = Modifier.fillMaxWidth().weight(0.5f))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OperationButton(viewModel = viewModel,
+                    operation = Operation.MULTIPLY,
+                    operationStr = "*",
+                    num1 = num1,
+                    num2 = num2,
+                    result = result,
+                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+                Spacer(modifier = Modifier.padding(10.dp))
+                OperationButton(viewModel = viewModel,
+                    operation = Operation.DIVIDE,
+                    operationStr = "÷",
+                    num1 = num1,
+                    num2 = num2,
+                    result = result,
+                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+            }
         }
-
         Spacer(modifier = Modifier.padding(20.dp))
     }
 
@@ -93,6 +112,8 @@ fun OperationButton(
             Log.d("CLICK", num1.value)
             val res =  viewModel.doOperation(operation, num1.value, num2.value)
             if (res != null) result.value = res
+            else if (operation == Operation.DIVIDE
+                && num2.value.isEqualZeroAsNumber()) result.value = "Невозможно делить на 0"
 
         },
         content = { Text(operationStr, fontSize = 25.sp) },
@@ -104,7 +125,7 @@ fun OperationButton(
 fun NumericField(
     viewModel: CalculatorViewModel = viewModel(),
     str : MutableState<String> = mutableStateOf(""),
-    isBlocked : Boolean = false,
+    isReadOnlyField : Boolean = false,
     label : @Composable() (() -> Unit) = { Text("Введите число") }
 ) {
     val focusManager = LocalFocusManager.current
@@ -117,9 +138,9 @@ fun NumericField(
                 .onFocusChanged {if (it.isFocused) str.value.trim() },
             label = label,
             onValueChange = {
-                if (it.length <= 21 || isBlocked) str.value = it.toFormat()
+                if (it.length <= 21 || isReadOnlyField) str.value = it.toFormat()
             },
-            readOnly = isBlocked,
+            readOnly = isReadOnlyField,
             singleLine = true,
 
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
@@ -134,7 +155,7 @@ fun NumericField(
         if (number == null) {
             Text("Неверный ввод", modifier = Modifier.padding(6.dp), color = Color.Red)
         }
-        else if (!viewModel.validateNumRange(number) && !isBlocked) {
+        else if (!viewModel.validateNumRange(number) && !isReadOnlyField) {
             Text("Переполнение", modifier = Modifier.padding(6.dp), color = Color.Red)
         }
     }
