@@ -4,11 +4,16 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import java.math.BigDecimal
+import java.math.RoundingMode
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
 import kotlin.math.abs
 
 enum class Operation() {
     ADD,
-    SUBTRACT
+    SUBTRACT,
+    MULTIPLY,
+    DIVIDE
 }
 
 class CalculatorViewModel : ViewModel() {
@@ -30,9 +35,14 @@ class CalculatorViewModel : ViewModel() {
         val result = when(operation) {
             Operation.ADD -> number1 + number2
             Operation.SUBTRACT -> number1 - number2
+            Operation.MULTIPLY -> number1 * number2
+            Operation.DIVIDE -> {
+                if (number2 != BigDecimal.ZERO) number1 / number2
+                else return null
+            }
         }
 
-        return result.toPlainString()
+        return result.toFormatPlainString()
     }
 
     fun validateNumRange(num : BigDecimal) : Boolean {
@@ -48,10 +58,19 @@ fun String.toNumber() : BigDecimal? {
         .toBigDecimalOrNull()
 }
 
+fun BigDecimal.toFormatPlainString(places : Int = 6): String? {
+    val df = DecimalFormat("%.${places}f")
+    this.setScale(places, RoundingMode.HALF_UP)
+    val customSymbol = DecimalFormatSymbols()
+    customSymbol.groupingSeparator = ' '
+    df.decimalFormatSymbols = customSymbol
+    return df.format(this)
+}
 fun String.toFormat() : String {
     val str : String = if (this.length >= 2 && this[0] == '0' && this[1] != '.') this[0] + "." + this.substring(1, this.lastIndex)
     else if (this.isNotEmpty() && this[0] == '.') "0$this"
     else this
+
     return str
         .filterNot { it.isWhitespace() }
 }
