@@ -60,7 +60,7 @@ fun Calculator(
                     num1 = num1,
                     num2 = num2,
                     result = result,
-                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+                    modifier = Modifier.fillMaxWidth().weight(0.25f))
                 Spacer(modifier = Modifier.padding(10.dp))
                 OperationButton(viewModel = viewModel,
                     operation = Operation.SUBTRACT,
@@ -68,17 +68,15 @@ fun Calculator(
                     num1 = num1,
                     num2 = num2,
                     result = result,
-                    modifier = Modifier.fillMaxWidth().weight(0.5f))
-            }
-            Spacer(modifier = Modifier.padding(10.dp))
-            Row(modifier = Modifier.fillMaxWidth()) {
+                    modifier = Modifier.fillMaxWidth().weight(0.25f))
+                Spacer(modifier = Modifier.padding(10.dp))
                 OperationButton(viewModel = viewModel,
                     operation = Operation.MULTIPLY,
                     operationStr = "*",
                     num1 = num1,
                     num2 = num2,
                     result = result,
-                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+                    modifier = Modifier.fillMaxWidth().weight(0.25f))
                 Spacer(modifier = Modifier.padding(10.dp))
                 OperationButton(viewModel = viewModel,
                     operation = Operation.DIVIDE,
@@ -86,7 +84,7 @@ fun Calculator(
                     num1 = num1,
                     num2 = num2,
                     result = result,
-                    modifier = Modifier.fillMaxWidth().weight(0.5f))
+                    modifier = Modifier.fillMaxWidth().weight(0.25f))
             }
         }
         Spacer(modifier = Modifier.padding(20.dp))
@@ -135,10 +133,20 @@ fun NumericField(
             value = str.value,
             modifier = Modifier
                 .fillMaxWidth()
-                .onFocusChanged {if (it.isFocused) str.value.trim() },
+                .onFocusChanged {if (!it.isFocused) {
+                    str.value.trim()
+                    if (!str.value.isEmpty()) {
+                        if (str.value.first() == '.' || str.value.first() == ',') {
+                            str.value = "0" + str.value
+                        }
+                        else if (str.value.last() == '.' || str.value.last() == ',') {
+                            str.value = str.value + "0"
+                        }
+                    }
+                } },
             label = label,
             onValueChange = {
-                if (it.length <= 21 || isReadOnlyField) str.value = it.toFormat()
+                if (it.length <= 21 || isReadOnlyField) str.value = format(it)
             },
             readOnly = isReadOnlyField,
             singleLine = true,

@@ -9,7 +9,10 @@ import java.math.MathContext
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
+import java.util.function.BiFunction
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 enum class Operation() {
     ADD,
@@ -68,7 +71,8 @@ class CalculatorViewModel : ViewModel() {
 
 fun String.toNumber() : BigDecimal? {
     return this
-        .filterNot { it.isWhitespace() || it == ',' }
+        .filterNot { it.isWhitespace() }
+        .replace(',', '.')
         .toBigDecimalOrNull()
         .let {
             it?.setScale(6, RoundingMode.HALF_UP)
@@ -76,17 +80,62 @@ fun String.toNumber() : BigDecimal? {
         .also { Log.d("parsed", this) }
 }
 
-fun BigDecimal.toFormatPlainString(): String? {
-    val df = DecimalFormat("#,###.######")
-    val customSymbol = DecimalFormatSymbols()
-    customSymbol.groupingSeparator = ' '
-    df.decimalFormatSymbols = customSymbol
-    return df.format(this)
+fun format(initial : String) : String {
+    if (initial.isEmpty()) return initial
+    val initialProcessed = initial.filterNot { it.isWhitespace() }
+    var str = ""
+    var divider : Char? = null
+    if (initial.contains('.') && initial.contains(','))
+    {
+        divider = initial[min(initial.indexOfFirst { it == '.' }, initial.indexOfFirst { it == ',' })]
+    }
+    else if (initial.contains('.'))
+    {
+        divider = '.'
+    }
+    else if (initial.contains(','))
+    {
+        divider = ','
+    }
+
+    val acceptableChars = setOf('-', '.',',')
+    val possibleDividers = setOf('.', ',')
+    for (i in initialProcessed.indices) {
+        if (initialProcessed[i] == '-' && i != 0) continue
+        if (divider != null) {
+            if (divider != initialProcessed[i] && possibleDividers.contains(initialProcessed[i])) continue
+            if (divider == initialProcessed[i] && str.contains(initialProcessed[i])) continue
+        }
+        if (divider == null && possibleDividers.contains(initialProcessed[i])) continue
+        if (!initialProcessed[i].isDigit() && !acceptableChars.contains(initialProcessed[i])) continue
+        str += initialProcessed[i]
+    }
+
+    var resultStr = ""
+    var dividerPos : Int = str.length
+    if (initial.contains('.'))
+    {
+        dividerPos = str.indexOfFirst { it == '.' }
+    }
+    else if (initial.contains(','))
+    {
+        dividerPos = str.indexOfFirst { it == ',' }
+    }
+    var lastSpaceIndex : Int = dividerPos
+    for (ch in (dividerPos-1) downTo 0) {
+        if (ch + 4 == lastSpaceIndex && str[ch] != '-') {
+            resultStr += " "
+            lastSpaceIndex = ch + 1
+        }
+        resultStr += str[ch]
+    }
+    resultStr = resultStr.reversed()
+    if (dividerPos > -1) resultStr += str.subSequence(startIndex = dividerPos, endIndex = str.length)
+    return resultStr
 }
-fun String.toFormat() : String {
-    val str : String = if (this.length >= 2 && this[0] == '0' && this[1] != '.') this[0] + "." + this.substring(1, this.lastIndex)
-    else this
-    return str
+
+fun BigDecimal.toFormatPlainString(): String? {
+    return format(this.toPlainString())
 }
 
 fun String.isEqualZeroAsNumber() : Boolean = (this.toNumber() != null && this.toNumber()!!.compareTo(
